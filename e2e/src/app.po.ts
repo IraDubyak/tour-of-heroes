@@ -12,7 +12,7 @@ export class AppPage {
     return element(by.css('[routerlink="/heroes"]'));
   }
   getAppHeroesComponent() {
-    return element(by.css('app-heroes')).isDisplayed();
+    return element(by.css('app-heroes'));
   }
 
 }

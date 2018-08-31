@@ -5,7 +5,6 @@ import {FormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
 import {HttpClientTestingModule, HttpTestingController} from '@angular/common/http/testing';
 import {HeroService} from './hero.service';
-import {MessagesComponent} from './messages/messages.component';
 
 describe('AppComponent', () => {
   beforeEach(async(() => {
@@ -16,8 +15,7 @@ describe('AppComponent', () => {
         RouterModule,
         HttpClientTestingModule],
       declarations: [
-        AppComponent,
-        MessagesComponent
+        AppComponent
       ],
       providers: [HeroService]
     }).compileComponents();
@@ -38,4 +36,11 @@ describe('AppComponent', () => {
     const compiled = fixture.debugElement.nativeElement;
     expect(compiled.querySelector('h1').textContent).toContain('Tour of heroes');
   }));
+  it('should have gray background', async(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const h1 = fixture.debugElement.nativeElement.querySelector('h1');
+    expect(h1.style.backgroundColor).toBe('rgba(192, 192, 192, 0.3)');
+  }));
+
+
 });
