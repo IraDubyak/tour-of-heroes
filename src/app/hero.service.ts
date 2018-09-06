@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpHeaders} from '@angular/common/http';
 
 import {Observable, of} from 'rxjs';
 import {catchError, map, tap} from 'rxjs/operators';
@@ -13,7 +13,7 @@ const httpOptions = {
 @Injectable({providedIn: 'root'})
 export class HeroService {
 
-  private heroesUrl = 'api/heroes';  // URL to web api
+  heroesUrl = 'api/heroes';  // URL to web api
 
   constructor(
     private http: HttpClient) {
@@ -60,7 +60,7 @@ export class HeroService {
   }
 
   /** DELETE: delete the hero from the server */
-  deleteHero (hero: Hero | number): Observable<any> {
+  deleteHero(hero: Hero | number): Observable<any> {
     const id = typeof hero === 'number' ? hero : hero.id;
     const url = `${this.heroesUrl}/${id}`;
 
@@ -87,16 +87,14 @@ export class HeroService {
   }
 
   private handleError<T>(operation = 'operation', result?: T) {
-    return (error: any): Observable<T> => {
+    return (error: HttpErrorResponse): Observable<T> => {
 
-      // TODO: send the error to remote logging infrastructure
       console.error(error); // log to console instead
 
-      // // TODO: better job of transforming error for user consumption
-      // this.log(`${operation} failed: ${error.message}`);
-
-      // Let the app keep running by returning an empty result.
-      return of(result as T);
+      const message = (error.error instanceof ErrorEvent) ?
+        error.error.message :
+        `server returned code ${error.status} with body "${error.error}"`;
+      throw new Error(`${operation} failed: ${message}`);
     };
   }
 

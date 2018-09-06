@@ -31,7 +31,7 @@ describe('HeroDetailComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should pass twice, passes but because of two way data binding ngModel', async(() => {
+  it('should pass twice, passes but because of two way data binding ngModel',() => {
     component.hero = {id: 1, name: 'fretfreg'};
     fixture.detectChanges();
     fixture.whenStable().then(() => {
@@ -44,5 +44,5 @@ describe('HeroDetailComponent', () => {
 
       expect(fixture.componentInstance.hero.name).toContain('MyHero');
     });
-  }));
+  });
 });
