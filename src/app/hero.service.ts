@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpHeaders} from '@angular/common/http';
 
 import {Observable, of} from 'rxjs';
-import {catchError, map, tap} from 'rxjs/operators';
+import {catchError, map} from 'rxjs/operators';
 
 import {Hero} from './hero';
 
@@ -30,9 +30,9 @@ export class HeroService {
 
   /** GET hero by id. Will 404 if id not found */
   getHero(id: number): Observable<Hero> {
-    const url = `${this.heroesUrl}/${id}`;
-    return this.http.get<Hero>(url).pipe(
-      // tap(_ => this.log(`fetched hero id=${id}`)),
+    const url = `${this.heroesUrl}/?id=${id}`;
+    return this.http.get<Hero[]>(url).pipe(
+        map(hero => hero[0]),
       catchError(this.handleError<Hero>(`getHero id=${id}`))
     );
   }
@@ -70,14 +70,6 @@ export class HeroService {
     );
   }
 
-  // deleteHero(id: number): Observable<any> {
-  //   const url = `${this.heroesUrl}/${id}`;
-  //
-  //   return this.http.delete(url,  httpOptions).pipe(
-  //     catchError(this.handleError<any>('deleteHero'))
-  //   );
-  // }
-
   /** PUT: update the hero on the server */
   updateHero(hero: Hero): Observable<any> {
     return this.http.put(this.heroesUrl, hero, httpOptions).pipe(
@@ -97,11 +89,6 @@ export class HeroService {
       throw new Error(`${operation} failed: ${message}`);
     };
   }
-
-  /** Log a HeroService message with the MessageService */
-  // private log(message: string) {
-  //   this.messageService.add(`HeroService: ${message}`);
-  // }
 }
 
 

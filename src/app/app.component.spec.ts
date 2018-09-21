@@ -42,5 +42,4 @@ describe('AppComponent', () => {
     expect(h1.style.backgroundColor).toBe('rgba(192, 192, 192, 0.3)');
   }));
 
-
 });

@@ -1,9 +1,9 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import {inject, TestBed} from '@angular/core/testing';
+import {HttpClientTestingModule, HttpTestingController} from '@angular/common/http/testing';
+import {async, fakeAsync, inject, TestBed, tick} from '@angular/core/testing';
 import {HttpClient, HttpResponse, HttpErrorResponse, HttpClientModule} from '@angular/common/http';
 
-import { Hero } from './hero';
-import { HeroService } from './hero.service';
+import {Hero} from './hero';
+import {HeroService} from './hero.service';
 import {defer, Observable} from 'rxjs';
 
 // function asyncData<T>(data: T) {
@@ -30,7 +30,7 @@ describe('HeroService', () => {
 
   it('should return expected heroes (HttpClient called once)', () => {
     const expectedHeroes: Hero[] =
-      [{ id: 1, name: 'A' }, { id: 2, name: 'B' }];
+      [{id: 1, name: 'A'}, {id: 2, name: 'B'}];
 
     httpClientSpy.get.and.returnValue(defer(() => Observable.of(expectedHeroes)));
 
@@ -52,7 +52,7 @@ describe('HeroService', () => {
 
     heroService.getHeroes().subscribe(
       heroes => fail('expected an error, not heroes'),
-      error  => expect(error.message).toContain('test 404 error')
+      error => expect(error.message).toContain('test 404 error')
     );
   });
 
@@ -73,16 +73,95 @@ describe('HeroService with mocks', () => {
       ]
     });
 
-    httpClient = TestBed.get(HttpClient);
+    // httpClient = TestBed.get(HttpClient);
     httpTestingController = TestBed.get(HttpTestingController);
     heroService = TestBed.get(HeroService);
+  });
+  afterEach(() => {
+    // After every test, assert that there are no more pending requests.
+    httpTestingController.verify();
+  });
+  it('should return expected heroes', () => {
+    const expectedHeroes: Hero[] = [
+      new Hero(1, 'Aa'),
+      new Hero(2, 'Bb'),
+      new Hero(3, 'Cc')
+    ];
+
+    heroService.getHeroes().subscribe(
+      (data) => {
+        expect(data).toEqual(expectedHeroes);
+        expect(data.length).toEqual(3);
+      },
+      fail
+    );
+
+    const req = httpTestingController.expectOne(heroService.heroesUrl);
+
+    expect(req.request.method).toBe('GET');
+    req.flush(expectedHeroes);
+  });
+  it('should return expected hero', fakeAsync(() => {
+    const expectedHero: Hero = new Hero(1, 'Aa');
+
+    heroService.getHero(expectedHero.id).subscribe(
+      (hero) => {
+        expect(hero.name).toEqual(expectedHero.name);
+      },
+      fail
+    );
+
+    const req = httpTestingController.expectOne(`${heroService.heroesUrl}/?id=${expectedHero.id}`);
+    //
+     expect(req.request.method).toBe('GET');
+    req.flush(expectedHero);
+    tick();
+  }));
+  it('should return expected heroes multiple times', () => {
+    const expectedHeroes: Hero[] = [
+      new Hero(1, 'Aa'),
+      new Hero(2, 'Bb'),
+      new Hero(3, 'Cc')
+    ];
+
+    heroService.getHeroes().subscribe();
+    heroService.getHeroes().subscribe();
+    heroService.getHeroes().subscribe(
+      (data) => {
+        expect(data).toEqual(expectedHeroes);
+        expect(data.length).toEqual(3);
+      },
+      fail
+    );
+
+    const reqs = httpTestingController.match(heroService.heroesUrl);
+
+    expect(reqs[1].request.method).toBe('GET');
+    expect(reqs.length).toEqual(3);
+    reqs[0].flush([]);
+    reqs[1].flush([{id: 1, name: 'Ss'}]);
+    reqs[2].flush(expectedHeroes);
+  });
+  it('should return no heroes', () => {
+
+    heroService.getHeroes().subscribe(
+      (data) => {
+        expect(data.length).toEqual(0);
+      },
+      fail
+    );
+
+    const req = httpTestingController.expectOne(heroService.heroesUrl);
+
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
   });
   it('should update a hero and return it', () => {
 
     const updateHero: Hero = {id: 1, name: 'A'};
 
     heroService.updateHero(updateHero).subscribe(
-      data => expect(data).toEqual(updateHero, 'should return the hero'),
+      data => expect(data.name).toEqual('A', 'should return the hero'),
       fail
     );
 
@@ -95,20 +174,56 @@ describe('HeroService with mocks', () => {
     const expectedResponse = new HttpResponse(
       {status: 200, statusText: 'OK', body: updateHero});
     req.event(expectedResponse);
+
+    req.flush(updateHero);
+  });
+  it('should delete expected hero', () => {
+    const expectedHero: Hero = new Hero(1, 'Aa');
+
+    heroService.deleteHero(expectedHero.id).subscribe(
+      (id: any) => {
+        expect(id).toEqual(expectedHero.id);
+      },
+      fail
+    );
+
+    const req = httpTestingController.expectOne(`${heroService.heroesUrl}/${expectedHero.id}`);
+
+    expect(req.request.method).toBe('DELETE');
+    const expectedResponse = new HttpResponse(
+      { status: 200, statusText: 'OK', body: expectedHero.id });
+    req.event(expectedResponse);
+    req.flush(1);
+  });
+  it('should add a hero', () => {
+
+    const addHero: Hero = {id: 19, name: 'A'};
+
+    heroService.addHero(addHero).subscribe(
+      data => expect(data.name).toEqual(addHero.name, 'should return the hero'),
+      fail
+    );
+
+    const req = httpTestingController.expectOne(heroService.heroesUrl);
+    expect(req.request.method).toEqual('POST');
+    expect(req.request.body).toEqual(addHero);
+
+    const expectedResponse = new HttpResponse(
+      { status: 200, statusText: 'OK', body: addHero });
+    req.event(expectedResponse);
+    req.flush(addHero);
+  });
+  it('should turn 404', () => {
+    const msg = 'Error';
+    heroService.getHeroes().subscribe(
+      heroes => fail('expected to fail'),
+      error => expect(error.message).toContain(msg)
+    );
+
+    const req = httpTestingController.expectOne(heroService.heroesUrl);
+
+    // respond with a 404 and the error message in the body
+    req.flush(msg, {status: 404, statusText: 'Not Found'});
   });
 });
-// describe('HeroService with spy', () => {
-//   let heroService: HeroService;
-//
-//   it('should update a hero and return it', () => {
-//     const httpClientSpy = jasmine.createSpyObj('HttpClient', ['put']);
-//     heroService = new HeroService(<any> httpClientSpy);
-//     const updateHero: Hero = {id: 1, name: 'A'};
-//
-//     httpClientSpy.put.and.returnValue(defer(() => Observable.of(updateHero)));
-//     heroService.updateHero(updateHero).subscribe(
-//       data => expect(data).toEqual(updateHero, 'should return the hero'),
-//       fail
-//     );
-//   });
-// });
+
